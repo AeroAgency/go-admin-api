@@ -35,3 +35,13 @@ func (ph PingHandler) PingModelField(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, nil)
 }
+
+func (ph PingHandler) PingModelElementsPermissions(c *gin.Context) {
+	modelCode := c.Params.ByName("model-code")
+	err := ph.modelService.PingModel(modelCode)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	c.JSON(http.StatusOK, []string{"read", "create", "edit", "delete"})
+}
