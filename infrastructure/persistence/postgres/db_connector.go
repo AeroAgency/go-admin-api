@@ -43,7 +43,7 @@ func (s *DatabaseConnector) GetModelFilterStringValues(dto models.ModelFilterVal
 	}
 	db.Table(dto.ModelCode).Select("count(DISTINCT id)").Where(fmt.Sprintf("%s IS NOT NULL", dto.ModelFieldCode)).Limit(1).Count(&count)
 	db = db.Table(dto.ModelCode).
-		Select(fmt.Sprintf("DISTINCT(%s) as value", dto.ModelFieldCode)).
+		Select(fmt.Sprintf("DISTINCT(%s) as name", dto.ModelFieldCode)).
 		Where(fmt.Sprintf("%s IS NOT NULL", dto.ModelFieldCode)).
 		Limit(dto.Limit).Offset(dto.Offset).
 		Scan(&rows.Items)
