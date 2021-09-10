@@ -53,7 +53,7 @@ func (s *DatabaseConnector) GetModelFilterStringValues(dto models.ModelFilterVal
 
 func (s *DatabaseConnector) GetModelFilterModelRefValues(dto models.ModelFilterValuesParamsDto) (*models.ValueRows, error) {
 	var rows models.ValueRows
-	table := dto.ModelFieldModelCode
+	table := dto.ModelCode
 	var count int
 	// Подсчет total
 	db := s.DB
