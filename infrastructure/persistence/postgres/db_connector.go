@@ -69,3 +69,41 @@ func (s *DatabaseConnector) GetModelFilterModelRefValues(dto models.ModelFilterV
 	rows.Total = count
 	return &rows, db.Error
 }
+
+func (s *DatabaseConnector) GetModelElementsList(dto models.ModelElementsListParamsApiDto) (*models.ModelElements, error) {
+	var rows models.ModelElements
+	table := dto.ModelCode
+	var count int
+	// Подсчет total
+	db := s.DB
+	for _, v := range dto.Filter {
+		field := v.Code
+		values := v.Values
+		isTypeMultiModelLink := strings.Contains(field, "_modellink_")
+		isTypeMultiReferenceLink := strings.Contains(field, "_reflink_")
+		if isTypeMultiModelLink {
+			fieldData := strings.Split(field, "_modellink_")
+			db = db.Where("id::text IN (SELECT DISTINCT ("+fieldData[0]+"_id) from "+v.Code+" WHERE "+fieldData[1]+"_id IN (?))", values)
+			continue
+		}
+		if isTypeMultiReferenceLink {
+			fieldData := strings.Split(field, "_reflink_")
+			db = db.Where("id::text IN (SELECT DISTINCT ("+fieldData[0]+"_id) from "+v.Code+" WHERE "+fieldData[1]+"_id IN (?))", values)
+			continue
+		}
+		if len(values) > 1 { // через OR
+			db = db.Where(fmt.Sprintf("%s IN (?)", field), values)
+		} else {
+			value := values[0]
+			db = db.Where(fmt.Sprintf("%s = '%s'", field, value))
+		}
+	}
+	db.Table(table).Select("count(DISTINCT id)").Limit(1).Count(&count)
+	db = db.Table(table).
+		Select(dto.Select).
+		Order(dto.Sort + " " + dto.Order + ", id desc").
+		Limit(dto.Limit).Offset(dto.Offset).
+		Scan(&rows.Items)
+	rows.Total = count
+	return &rows, db.Error
+}

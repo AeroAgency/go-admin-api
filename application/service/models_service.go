@@ -88,3 +88,11 @@ func (ms ModelsService) GetModelFilterValues(dto models.ModelFilterValuesParamsD
 		return nil, appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("value of param type is invalid"))}
 	}
 }
+
+func (ms ModelsService) GetModelElementsList(dto models.ModelElementsListParamsApiDto) (*models.ModelElements, error) {
+	modelElements, err := ms.db.GetModelElementsList(dto)
+	if err != nil {
+		return nil, err
+	}
+	return modelElements, nil
+}

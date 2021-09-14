@@ -6,6 +6,7 @@ import (
 	appErrors "github.com/AeroAgency/go-admin-api/infrastructure/errors"
 	"github.com/AeroAgency/go-admin-api/interfaces/rest/dto/models"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	pkgErrors "github.com/pkg/errors"
 	"net/http"
 	"strconv"
@@ -71,10 +72,12 @@ func (ph AdminModelsHandler) GetModelFilterValues(c *gin.Context) {
 	limit, err := strconv.Atoi(c.Query("limit"))
 	if err != nil {
 		ph.errorService.HandleError(appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("value of param limit is invalid"))}, c)
+		return
 	}
 	offset, err := strconv.Atoi(c.Query("offset"))
 	if err != nil {
 		ph.errorService.HandleError(appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("value of param offset is invalid"))}, c)
+		return
 	}
 	dto := models.ModelFilterValuesParamsDto{
 		ModelCode:               c.Params.ByName("model-code"),
@@ -93,4 +96,16 @@ func (ph AdminModelsHandler) GetModelFilterValues(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, filterValues)
+}
+
+func (ph AdminModelsHandler) GetModelElementsList(c *gin.Context) {
+	var modelElementsListParamsApiDto models.ModelElementsListParamsApiDto
+	err := c.ShouldBindWith(&modelElementsListParamsApiDto, binding.JSON)
+	if err != nil {
+		err = appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("some of input params is invalid. err: %s", err))}
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	modelElements, err := ph.modelService.GetModelElementsList(modelElementsListParamsApiDto)
+	c.JSON(http.StatusOK, modelElements)
 }
