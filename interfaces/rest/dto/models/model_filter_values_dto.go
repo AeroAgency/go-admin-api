@@ -10,6 +10,7 @@ type ModelFilterValuesParamsDto struct {
 	Offset                  int    `json:"offset"`
 	Query                   string `json:"query"`
 	Multiple                bool   `json:"multiple" url:"multiple"`
+	FilterId                string `json:"filter_id" url:"filter_id"`
 }
 
 type ValueRows struct {

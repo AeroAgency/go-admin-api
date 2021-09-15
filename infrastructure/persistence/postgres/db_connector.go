@@ -2,9 +2,11 @@ package postgres
 
 import (
 	"fmt"
+	appErrors "github.com/AeroAgency/go-admin-api/infrastructure/errors"
 	"github.com/AeroAgency/go-admin-api/interfaces/rest/dto/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	pkgErrors "github.com/pkg/errors"
 	"strings"
 )
 
@@ -38,6 +40,7 @@ func (s *DatabaseConnector) GetModelFilterStringValues(dto models.ModelFilterVal
 	var count int
 	// Подсчет total
 	db := s.DB
+
 	if len([]rune(dto.Query)) > 2 {
 		db = db.Where(fmt.Sprintf("LOWER(%s) LIKE ?", dto.ModelFieldCode), "%"+strings.ToLower(dto.Query)+"%")
 	}
@@ -57,6 +60,14 @@ func (s *DatabaseConnector) GetModelFilterModelRefValues(dto models.ModelFilterV
 	var count int
 	// Подсчет total
 	db := s.DB
+
+	if len([]rune(dto.Query)) > 0 && len([]rune(dto.FilterId)) > 0 {
+		return nil, appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("wrong input. only query or filter_id can be filled"))}
+	}
+	if len([]rune(dto.FilterId)) > 0 {
+		ids := strings.Split(dto.FilterId, ",")
+		db = db.Where("id IN (?)", ids)
+	}
 	if len([]rune(dto.Query)) > 2 {
 		db = db.Where(fmt.Sprintf("%s LIKE ?", "LOWER(name)"), "%"+strings.ToLower(dto.Query)+"%")
 	}
@@ -106,4 +117,105 @@ func (s *DatabaseConnector) GetModelElementsList(dto models.ModelElementsListPar
 		Scan(&rows.Items)
 	rows.Total = count
 	return &rows, db.Error
+}
+
+func (s DatabaseConnector) GetModelElement(modelCode string, modelElementId string, selectFields []string) (models.ModelElementDetail, error) {
+	db := s.DB
+	var simpleFields []string
+	var linkedModelMultiFields []string
+	var linkedRefMultiFields []string
+	for _, field := range selectFields {
+		isTypeMultiModelLink := strings.Contains(field, "_modellink_")
+		isTypeMultiReferenceLink := strings.Contains(field, "_reflink_")
+		if isTypeMultiModelLink {
+			linkedModelMultiFields = append(linkedModelMultiFields, field)
+		} else if isTypeMultiReferenceLink {
+			linkedRefMultiFields = append(linkedRefMultiFields, field)
+		} else {
+			simpleFields = append(simpleFields, field)
+		}
+	}
+	rows, err := db.Table(modelCode).
+		Select(simpleFields).
+		Where("id = ?", modelElementId).
+		Limit(1).
+		Rows()
+
+	if err != nil {
+		return nil, appErrors.NotFoundError{Err: pkgErrors.WithStack(err)}
+	}
+	cols, _ := rows.Columns()
+	results := make([]map[string]interface{}, 1)
+	for i := 0; rows.Next(); i++ {
+		// Create a slice of interface{}'s to represent each column,
+		// and a second slice to contain pointers to each item in the columns slice.
+		columns := make([]interface{}, len(cols))
+		columnPointers := make([]interface{}, len(cols))
+		for i, _ := range columns {
+			columnPointers[i] = &columns[i]
+		}
+		// Scan the result into the column pointers...
+		if err := rows.Scan(columnPointers...); err != nil {
+			return nil, err
+		}
+		// Create our map, and retrieve the value for each column from the pointers slice,
+		// storing it in the map with the name of the column as the key.
+		m := make(map[string]interface{})
+		for i, colName := range cols {
+			val := columnPointers[i].(*interface{})
+			m[colName] = *val
+		}
+		results[i] = m
+		// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
+	}
+	element := results[0]
+	rowValues := make(map[string]string)
+	for key, value := range element {
+		switch value := value.(type) {
+		case string:
+			rowValues[key] = value
+		}
+	}
+	if len(linkedModelMultiFields) > 0 {
+		for _, linkedModelMultiField := range linkedModelMultiFields {
+			fieldData := strings.Split(linkedModelMultiField, "_modellink_")
+			var modelElementLinks []models.ModelElementLink
+			db = db.Table(linkedModelMultiField).
+				Select(fieldData[1]+"_id as link_id").
+				Where(fieldData[0]+"_id = ?", modelElementId).
+				Find(&modelElementLinks)
+			for _, link := range modelElementLinks {
+				val, ok := rowValues[linkedModelMultiField]
+				if !ok {
+					rowValues[linkedModelMultiField] = link.LinkId
+				} else {
+					fieldValues := []string{val}
+					fieldValues = append(fieldValues, link.LinkId)
+					rowValues[linkedModelMultiField] = strings.Join(fieldValues, ",")
+				}
+			}
+		}
+	}
+
+	if len(linkedRefMultiFields) > 0 {
+		for _, linkedRefMultiField := range linkedRefMultiFields {
+			fieldData := strings.Split(linkedRefMultiField, "_reflink_")
+			var modelElementLinks []models.ModelElementLink
+			db = db.Table(linkedRefMultiField).
+				Select(fieldData[1]+"_id as link_id").
+				Where(fieldData[0]+"_id = ?", modelElementId).
+				Find(&modelElementLinks)
+			for _, link := range modelElementLinks {
+				val, ok := rowValues[linkedRefMultiField]
+				if !ok {
+					rowValues[linkedRefMultiField] = link.LinkId
+				} else {
+					fieldValues := []string{val}
+					fieldValues = append(fieldValues, link.LinkId)
+					rowValues[linkedRefMultiField] = strings.Join(fieldValues, ",")
+				}
+			}
+		}
+	}
+	return rowValues, nil
 }

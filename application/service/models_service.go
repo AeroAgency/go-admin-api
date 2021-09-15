@@ -96,3 +96,11 @@ func (ms ModelsService) GetModelElementsList(dto models.ModelElementsListParamsA
 	}
 	return modelElements, nil
 }
+
+func (ms ModelsService) GetModelElement(modelCode string, modelElementId string, selectFields []string) (models.ModelElementDetail, error) {
+	modelElement, err := ms.db.GetModelElement(modelCode, modelElementId, selectFields)
+	if err != nil {
+		return nil, err
+	}
+	return modelElement, nil
+}

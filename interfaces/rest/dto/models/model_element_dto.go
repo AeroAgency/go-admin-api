@@ -11,7 +11,9 @@ type ModelElementsListParamsApiDto struct {
 	Filter    []ModelElementsListParamsApiDtoFilter `json:"filter"`
 }
 
-type ModelElementsListParamsApiDtoFilter struct {
+type ModelElementsListParamsApiDtoFilter FieldValue
+
+type FieldValue struct {
 	Code   string   `json:"code"`
 	Values []string `json:"values"`
 }
@@ -25,4 +27,10 @@ type ModelElements struct {
 type ModelElement struct {
 	Id   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type ModelElementDetail map[string]string
+
+type ModelElementLink struct {
+	LinkId string `json:"link_id"`
 }

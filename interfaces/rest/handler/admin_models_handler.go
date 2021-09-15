@@ -10,6 +10,7 @@ import (
 	pkgErrors "github.com/pkg/errors"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type AdminModelsHandler struct {
@@ -88,6 +89,7 @@ func (ph AdminModelsHandler) GetModelFilterValues(c *gin.Context) {
 		Limit:                   limit,
 		Offset:                  offset,
 		Query:                   c.Query("query"),
+		FilterId:                c.Query("filter_id"),
 		Multiple:                c.Query("multiple") == "true",
 	}
 	filterValues, err := ph.modelService.GetModelFilterValues(dto)
@@ -107,5 +109,21 @@ func (ph AdminModelsHandler) GetModelElementsList(c *gin.Context) {
 		return
 	}
 	modelElements, err := ph.modelService.GetModelElementsList(modelElementsListParamsApiDto)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}
 	c.JSON(http.StatusOK, modelElements)
+}
+
+func (ph AdminModelsHandler) GetModelElement(c *gin.Context) {
+	modelCode := c.Params.ByName("model-code")
+	modelElementId := c.Params.ByName("model-element-id")
+	selectFields := strings.Split(c.Query("select"), ",")
+	modelElement, err := ph.modelService.GetModelElement(modelCode, modelElementId, selectFields)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	c.JSON(http.StatusOK, modelElement)
 }
