@@ -248,7 +248,7 @@ func (s DatabaseConnector) CreateModelElement(modelCode string, dto models.Model
 	}
 	db = db.Exec(
 		fmt.Sprintf(
-			"INSERT INTO %s (%s) VALUES (?) RETURNING stores.*",
+			"INSERT INTO %s (%s) VALUES (?)",
 			modelCode,
 			strings.Join(fields, ","),
 		),
