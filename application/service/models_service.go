@@ -90,6 +90,12 @@ func (ms ModelsService) GetModelFilterValues(dto models.ModelFilterValuesParamsD
 }
 
 func (ms ModelsService) GetModelElementsList(dto models.ModelElementsListParamsApiDto) (*models.ModelElements, error) {
+	if dto.Sort == "" {
+		dto.Sort = "id"
+	}
+	if dto.Order == "" {
+		dto.Sort = "desc"
+	}
 	modelElements, err := ms.db.GetModelElementsList(dto)
 	if err != nil {
 		return nil, err

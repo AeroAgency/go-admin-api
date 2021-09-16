@@ -127,3 +127,15 @@ func (ph AdminModelsHandler) GetModelElement(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, modelElement)
 }
+
+func (ph AdminModelsHandler) CreateModelElement(c *gin.Context) {
+	modelCode := c.Params.ByName("model-code")
+	/*modelElementId := c.Params.ByName("model-element-id")
+	selectFields := strings.Split(c.Query("select"), ",")
+	modelElement, err := ph.modelService.GetModelElement(modelCode, modelElementId, selectFields)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}*/
+	c.JSON(http.StatusOK, modelCode)
+}
