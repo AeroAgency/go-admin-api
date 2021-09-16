@@ -94,7 +94,7 @@ func (ms ModelsService) GetModelElementsList(dto models.ModelElementsListParamsA
 		dto.Sort = "id"
 	}
 	if dto.Order == "" {
-		dto.Sort = "desc"
+		dto.Order = "desc"
 	}
 	modelElements, err := ms.db.GetModelElementsList(dto)
 	if err != nil {
