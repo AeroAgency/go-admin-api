@@ -34,3 +34,12 @@ type ModelElementDetail map[string]string
 type ModelElementLink struct {
 	LinkId string `json:"link_id"`
 }
+
+type ModelElementCreateApiDto struct {
+	Id          string
+	FieldValues []FieldValue `json:"fieldValues"`
+}
+
+type ModelElementIdDto struct {
+	ModelElementId string `json:"modelElementId"`
+}

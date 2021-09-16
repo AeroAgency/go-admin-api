@@ -94,7 +94,7 @@ func (ms ModelsService) GetModelElementsList(dto models.ModelElementsListParamsA
 		dto.Sort = "id"
 	}
 	if dto.Order == "" {
-		dto.Order = "desc"
+		dto.Sort = "desc"
 	}
 	modelElements, err := ms.db.GetModelElementsList(dto)
 	if err != nil {
@@ -109,4 +109,14 @@ func (ms ModelsService) GetModelElement(modelCode string, modelElementId string,
 		return nil, err
 	}
 	return modelElement, nil
+}
+func (ms ModelsService) CreateModelElement(modelCode string, dto models.ModelElementCreateApiDto) (*models.ModelElementIdDto, error) {
+	modelElementId, err := ms.db.CreateModelElement(modelCode, dto)
+	if err != nil {
+		return nil, err
+	}
+	result := models.ModelElementIdDto{
+		ModelElementId: modelElementId,
+	}
+	return &result, nil
 }

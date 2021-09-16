@@ -7,12 +7,18 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	pkgErrors "github.com/pkg/errors"
+	uuid "github.com/satori/go.uuid"
 	"strings"
 )
 
 // Объект для работы с БД
 type DatabaseConnector struct {
 	DB *gorm.DB
+}
+
+type LinkMultiFieldValues struct {
+	Code   string
+	Values []string
 }
 
 func NewDatabaseConnector(DB *gorm.DB) *DatabaseConnector {
@@ -196,7 +202,6 @@ func (s DatabaseConnector) GetModelElement(modelCode string, modelElementId stri
 			}
 		}
 	}
-
 	if len(linkedRefMultiFields) > 0 {
 		for _, linkedRefMultiField := range linkedRefMultiFields {
 			fieldData := strings.Split(linkedRefMultiField, "_reflink_")
@@ -218,4 +223,83 @@ func (s DatabaseConnector) GetModelElement(modelCode string, modelElementId stri
 		}
 	}
 	return rowValues, nil
+}
+
+func (s DatabaseConnector) CreateModelElement(modelCode string, dto models.ModelElementCreateApiDto) (string, error) {
+	db := s.DB
+	id := uuid.NewV4().String()
+	fields := []string{"id"}
+	values := []string{id}
+
+	var linkedModelMultiFields []LinkMultiFieldValues
+	var linkedRefMultiFields []LinkMultiFieldValues
+	for _, v := range dto.FieldValues {
+		field := v.Code
+		isTypeMultiModelLink := strings.Contains(field, "_modellink_")
+		isTypeMultiReferenceLink := strings.Contains(field, "_reflink_")
+		if isTypeMultiModelLink {
+			linkedModelMultiFields = append(linkedModelMultiFields, LinkMultiFieldValues{Code: field, Values: v.Values})
+		} else if isTypeMultiReferenceLink {
+			linkedRefMultiFields = append(linkedRefMultiFields, LinkMultiFieldValues{Code: field, Values: v.Values})
+		} else {
+			fields = append(fields, field)
+			values = append(values, strings.Join(v.Values, ","))
+		}
+	}
+	db = db.Exec(
+		fmt.Sprintf(
+			"INSERT INTO %s (%s) VALUES (?) RETURNING stores.*",
+			modelCode,
+			strings.Join(fields, ","),
+		),
+		values,
+	)
+	if db.Error != nil {
+		return "", db.Error
+	}
+	if len(linkedModelMultiFields) > 0 {
+		for _, v := range linkedModelMultiFields {
+			fieldData := strings.Split(v.Code, "_modellink_")
+			fields := []string{
+				fieldData[0] + "_id",
+				fieldData[1] + "_id",
+			}
+			for _, vf := range v.Values {
+				db = db.Exec(
+					fmt.Sprintf(
+						"INSERT INTO %s (%s) VALUES (?)",
+						v.Code,
+						strings.Join(fields, ","),
+					),
+					[]string{id, vf},
+				)
+				if db.Error != nil {
+					return "", db.Error
+				}
+			}
+		}
+	}
+	if len(linkedRefMultiFields) > 0 {
+		for _, v := range linkedRefMultiFields {
+			fieldData := strings.Split(v.Code, "_reflink_")
+			fields := []string{
+				fieldData[0] + "_id",
+				fieldData[1] + "_id",
+			}
+			for _, vf := range v.Values {
+				db = db.Exec(
+					fmt.Sprintf(
+						"INSERT INTO %s (%s) VALUES (?)",
+						v.Code,
+						strings.Join(fields, ","),
+					),
+					[]string{id, vf},
+				)
+				if db.Error != nil {
+					return "", db.Error
+				}
+			}
+		}
+	}
+	return id, nil
 }
