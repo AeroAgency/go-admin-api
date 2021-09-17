@@ -120,3 +120,14 @@ func (ms ModelsService) CreateModelElement(modelCode string, dto models.ModelEle
 	}
 	return &result, nil
 }
+
+func (ms ModelsService) EditModelElement(modelCode string, modelElementId string, dto models.ModelElementCreateApiDto) (*models.ModelElementIdDto, error) {
+	modelElementId, err := ms.db.EditModelElement(modelCode, modelElementId, dto)
+	if err != nil {
+		return nil, err
+	}
+	result := models.ModelElementIdDto{
+		ModelElementId: modelElementId,
+	}
+	return &result, nil
+}

@@ -144,3 +144,21 @@ func (ph AdminModelsHandler) CreateModelElement(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, modelElementId)
 }
+
+func (ph AdminModelsHandler) EditModelElement(c *gin.Context) {
+	modelCode := c.Params.ByName("model-code")
+	modelElementId := c.Params.ByName("model-element-id")
+	var modelElementCreateApiDto models.ModelElementCreateApiDto
+	err := c.ShouldBindWith(&modelElementCreateApiDto, binding.JSON)
+	if err != nil {
+		err = appErrors.BadRequestError{Err: pkgErrors.WithStack(fmt.Errorf("some of input params is invalid. err: %s", err))}
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	modelElementIdDto, err := ph.modelService.EditModelElement(modelCode, modelElementId, modelElementCreateApiDto)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	c.JSON(http.StatusOK, modelElementIdDto)
+}

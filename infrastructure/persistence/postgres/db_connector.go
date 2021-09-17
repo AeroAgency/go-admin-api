@@ -175,11 +175,16 @@ func (s DatabaseConnector) GetModelElement(modelCode string, modelElementId stri
 		// Outputs: map[columnName:value columnName2:value2 columnName3:value3 ...]
 	}
 	element := results[0]
+	if element == nil {
+		err = appErrors.NotFoundError{Err: pkgErrors.WithStack(fmt.Errorf("element not found"))}
+		return nil, err
+	}
 	rowValues := make(map[string]string)
 	for key, value := range element {
-		switch value := value.(type) {
-		case string:
-			rowValues[key] = value
+		if value == nil {
+			rowValues[key] = ""
+		} else {
+			rowValues[key] = fmt.Sprintf("%v", value)
 		}
 	}
 	if len(linkedModelMultiFields) > 0 {
@@ -302,4 +307,94 @@ func (s DatabaseConnector) CreateModelElement(modelCode string, dto models.Model
 		}
 	}
 	return id, nil
+}
+
+func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId string, dto models.ModelElementCreateApiDto) (string, error) {
+	db := s.DB
+	var fields []string
+	var values []string
+	fieldValues := make(map[string]interface{})
+
+	var linkedModelMultiFields []LinkMultiFieldValues
+	var linkedRefMultiFields []LinkMultiFieldValues
+	for _, v := range dto.FieldValues {
+		field := v.Code
+		isTypeMultiModelLink := strings.Contains(field, "_modellink_")
+		isTypeMultiReferenceLink := strings.Contains(field, "_reflink_")
+		if isTypeMultiModelLink {
+			linkedModelMultiFields = append(linkedModelMultiFields, LinkMultiFieldValues{Code: field, Values: v.Values})
+		} else if isTypeMultiReferenceLink {
+			linkedRefMultiFields = append(linkedRefMultiFields, LinkMultiFieldValues{Code: field, Values: v.Values})
+		} else {
+			fields = append(fields, field)
+			values = append(values, strings.Join(v.Values, ","))
+			fieldValues[field] = strings.Join(v.Values, ",")
+		}
+	}
+	db = db.Raw("WHERE id = ?", modelElementId)
+	db = db.Table(modelCode).Updates(fieldValues)
+	if db.Error != nil {
+		return "", db.Error
+	}
+	if len(linkedModelMultiFields) > 0 {
+		for _, v := range linkedModelMultiFields {
+			fieldData := strings.Split(v.Code, "_modellink_")
+			fields := []string{
+				fieldData[0] + "_id",
+				fieldData[1] + "_id",
+			}
+			db = db.Exec(
+				fmt.Sprintf(
+					"DELETE FROM %s WHERE %s = '%s'",
+					v.Code,
+					fieldData[0]+"_id",
+					modelElementId,
+				),
+			)
+			for _, vf := range v.Values {
+				db = db.Exec(
+					fmt.Sprintf(
+						"INSERT INTO %s (%s) VALUES (?)",
+						v.Code,
+						strings.Join(fields, ","),
+					),
+					[]string{modelElementId, vf},
+				)
+				if db.Error != nil {
+					return "", db.Error
+				}
+			}
+		}
+	}
+	if len(linkedRefMultiFields) > 0 {
+		for _, v := range linkedRefMultiFields {
+			fieldData := strings.Split(v.Code, "_reflink_")
+			fields := []string{
+				fieldData[0] + "_id",
+				fieldData[1] + "_id",
+			}
+			db = db.Exec(
+				fmt.Sprintf(
+					"DELETE FROM %s WHERE %s = '%s'",
+					v.Code,
+					fieldData[0]+"_id",
+					modelElementId,
+				),
+			)
+			for _, vf := range v.Values {
+				db = db.Exec(
+					fmt.Sprintf(
+						"INSERT INTO %s (%s) VALUES (?)",
+						v.Code,
+						strings.Join(fields, ","),
+					),
+					[]string{modelElementId, vf},
+				)
+				if db.Error != nil {
+					return "", db.Error
+				}
+			}
+		}
+	}
+	return modelElementId, nil
 }
