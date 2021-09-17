@@ -6,6 +6,7 @@ import (
 	"github.com/AeroAgency/go-admin-api/interfaces/rest/dto/models"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/lib/pq"
 	pkgErrors "github.com/pkg/errors"
 	uuid "github.com/satori/go.uuid"
 	"strings"
@@ -261,6 +262,9 @@ func (s DatabaseConnector) CreateModelElement(modelCode string, dto models.Model
 		values,
 	)
 	if db.Error != nil {
+		if err, ok := db.Error.(*pq.Error); ok && err.Code.Name() == "unique_violation" {
+			return "", appErrors.ConflictError{Err: pkgErrors.WithStack(err)}
+		}
 		return "", db.Error
 	}
 	if len(linkedModelMultiFields) > 0 {
