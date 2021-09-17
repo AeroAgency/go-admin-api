@@ -131,3 +131,11 @@ func (ms ModelsService) EditModelElement(modelCode string, modelElementId string
 	}
 	return &result, nil
 }
+
+func (ms ModelsService) DeleteModelElement(modelCode string, modelElementId string) error {
+	err := ms.db.DeleteModelElement(modelCode, modelElementId)
+	if err != nil {
+		return err
+	}
+	return nil
+}

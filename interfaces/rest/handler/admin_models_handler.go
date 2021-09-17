@@ -162,3 +162,14 @@ func (ph AdminModelsHandler) EditModelElement(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, modelElementIdDto)
 }
+
+func (ph AdminModelsHandler) DeleteModelElement(c *gin.Context) {
+	modelCode := c.Params.ByName("model-code")
+	modelElementId := c.Params.ByName("model-element-id")
+	err := ph.modelService.DeleteModelElement(modelCode, modelElementId)
+	if err != nil {
+		ph.errorService.HandleError(err, c)
+		return
+	}
+	c.JSON(http.StatusOK, nil)
+}

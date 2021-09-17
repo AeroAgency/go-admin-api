@@ -398,3 +398,12 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 	}
 	return modelElementId, nil
 }
+
+func (s DatabaseConnector) DeleteModelElement(modelCode string, modelElementId string) error {
+	db := s.DB
+	db = db.Table(modelCode).Where("id=?", modelElementId).Delete(modelElementId)
+	if db.Error != nil {
+		return db.Error
+	}
+	return nil
+}
