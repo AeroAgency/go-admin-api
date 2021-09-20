@@ -336,17 +336,14 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 			fieldValues[field] = strings.Join(v.Values, ",")
 		}
 	}
-	fmt.Println("sql EditModelElement st")
 	db = db.Raw("WHERE id = ?", modelElementId)
 	db = db.LogMode(true)
-	fmt.Println(len(fieldValues))
-	fmt.Println(fieldValues)
-	fmt.Println(dto)
 	db = db.Table(modelCode).Updates(fieldValues)
 	if db.Error != nil {
-		return "", db.Error
+		if err, ok := db.Error.(*pq.Error); ok && err.Code.Name() == "unique_violation" {
+			return "", appErrors.ConflictError{Err: pkgErrors.WithStack(err)}
+		}
 	}
-	fmt.Println("sql EditModelElement st")
 	if len(linkedModelMultiFields) > 0 {
 		for _, v := range linkedModelMultiFields {
 			fieldData := strings.Split(v.Code, "_modellink_")

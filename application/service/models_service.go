@@ -122,7 +122,6 @@ func (ms ModelsService) CreateModelElement(modelCode string, dto models.ModelEle
 }
 
 func (ms ModelsService) EditModelElement(modelCode string, modelElementId string, dto models.ModelElementCreateApiDto) (*models.ModelElementIdDto, error) {
-	fmt.Println("db EditModelElement st")
 	modelElementId, err := ms.db.EditModelElement(modelCode, modelElementId, dto)
 	if err != nil {
 		return nil, err
@@ -130,7 +129,6 @@ func (ms ModelsService) EditModelElement(modelCode string, modelElementId string
 	result := models.ModelElementIdDto{
 		ModelElementId: modelElementId,
 	}
-	fmt.Println("db EditModelElement st")
 	return &result, nil
 }
 
