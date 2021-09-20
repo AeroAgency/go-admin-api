@@ -341,6 +341,7 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 	db = db.LogMode(true)
 	fmt.Println(len(fieldValues))
 	fmt.Println(fieldValues)
+	fmt.Println(dto)
 	db = db.Table(modelCode).Updates(fieldValues)
 	if db.Error != nil {
 		return "", db.Error
