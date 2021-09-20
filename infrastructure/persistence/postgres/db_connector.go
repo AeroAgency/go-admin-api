@@ -338,6 +338,9 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 	}
 	fmt.Println("sql EditModelElement st")
 	db = db.Raw("WHERE id = ?", modelElementId)
+	db = db.LogMode(true)
+	fmt.Println(len(fieldValues))
+	fmt.Println(fieldValues)
 	db = db.Table(modelCode).Updates(fieldValues)
 	if db.Error != nil {
 		return "", db.Error
