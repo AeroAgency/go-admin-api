@@ -155,11 +155,13 @@ func (ph AdminModelsHandler) EditModelElement(c *gin.Context) {
 		ph.errorService.HandleError(err, c)
 		return
 	}
+	fmt.Println("service EditModelElement st")
 	modelElementIdDto, err := ph.modelService.EditModelElement(modelCode, modelElementId, modelElementCreateApiDto)
 	if err != nil {
 		ph.errorService.HandleError(err, c)
 		return
 	}
+	fmt.Println("service EditModelElement end")
 	c.JSON(http.StatusOK, modelElementIdDto)
 }
 

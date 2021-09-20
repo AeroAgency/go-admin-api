@@ -336,11 +336,13 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 			fieldValues[field] = strings.Join(v.Values, ",")
 		}
 	}
+	fmt.Println("sql EditModelElement st")
 	db = db.Raw("WHERE id = ?", modelElementId)
 	db = db.Table(modelCode).Updates(fieldValues)
 	if db.Error != nil {
 		return "", db.Error
 	}
+	fmt.Println("sql EditModelElement st")
 	if len(linkedModelMultiFields) > 0 {
 		for _, v := range linkedModelMultiFields {
 			fieldData := strings.Split(v.Code, "_modellink_")
