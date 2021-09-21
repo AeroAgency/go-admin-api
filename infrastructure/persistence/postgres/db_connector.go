@@ -51,11 +51,11 @@ func (s *DatabaseConnector) GetModelFilterStringValues(dto models.ModelFilterVal
 	if len([]rune(dto.Query)) > 2 {
 		db = db.Where(fmt.Sprintf("LOWER(%s) LIKE ?", dto.ModelFieldCode), "%"+strings.ToLower(dto.Query)+"%")
 	}
-	db.Table(dto.ModelCode).Select("count(DISTINCT id)").Where(fmt.Sprintf("%s IS NOT NULL", dto.ModelFieldCode)).Where(fmt.Sprintf("%s !=''", dto.ModelFieldCode)).Limit(1).Count(&count)
+	db.Table(dto.ModelCode).Select("count(DISTINCT id)").Where(fmt.Sprintf("%s IS NOT NULL", dto.ModelFieldCode)).Where(fmt.Sprintf("%s::varchar(255) !=''", dto.ModelFieldCode)).Limit(1).Count(&count)
 	db = db.Table(dto.ModelCode).
 		Select(fmt.Sprintf("DISTINCT(%s) as name", dto.ModelFieldCode)).
 		Where(fmt.Sprintf("%s IS NOT NULL", dto.ModelFieldCode)).
-		Where(fmt.Sprintf("%s !=''", dto.ModelFieldCode)).
+		Where(fmt.Sprintf("%s::varchar(255) !=''", dto.ModelFieldCode)).
 		Limit(dto.Limit).Offset(dto.Offset).
 		Scan(&rows.Items)
 	rows.Total = count
