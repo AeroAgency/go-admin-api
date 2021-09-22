@@ -343,6 +343,7 @@ func (s DatabaseConnector) EditModelElement(modelCode string, modelElementId str
 		if err, ok := db.Error.(*pq.Error); ok && err.Code.Name() == "unique_violation" {
 			return "", appErrors.ConflictError{Err: pkgErrors.WithStack(err)}
 		}
+		return "", db.Error
 	}
 	if len(linkedModelMultiFields) > 0 {
 		for _, v := range linkedModelMultiFields {
