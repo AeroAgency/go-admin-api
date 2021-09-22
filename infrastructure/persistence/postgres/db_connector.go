@@ -186,7 +186,12 @@ func (s DatabaseConnector) GetModelElement(modelCode string, modelElementId stri
 		if value == nil {
 			rowValues[key] = ""
 		} else {
-			rowValues[key] = fmt.Sprintf("%v", value)
+			switch value.(type) {
+			default:
+				rowValues[key] = fmt.Sprintf("%v", value)
+			case []uint8:
+				rowValues[key] = fmt.Sprintf("%s", value)
+			}
 		}
 	}
 	if len(linkedModelMultiFields) > 0 {
