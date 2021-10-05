@@ -107,7 +107,7 @@ func (s *DatabaseConnector) GetModelElementsList(dto models.ModelElementsListPar
 		}
 		if isTypeMultiReferenceLink {
 			fieldData := strings.Split(field, "_reflink_")
-			db = db.Where("id::text IN (SELECT DISTINCT ("+fieldData[0]+"_id) from "+v.Code+" WHERE "+fieldData[1]+"_id IN (?))", values)
+			db = db.Where("id IN (SELECT DISTINCT ("+fieldData[0]+"_id) from "+v.Code+" WHERE "+fieldData[1]+"_id IN (?))", values)
 			continue
 		}
 		if len(values) > 1 { // через OR
